@@ -84,6 +84,7 @@ var requestHandler = function(request, response) {
   // Handle POST requests
   if (request.method === 'POST') {
     statusCode = 201;
+    
     request.on('data', (chunk) => {
       body += chunk;
     });
