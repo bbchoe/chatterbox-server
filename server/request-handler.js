@@ -89,7 +89,7 @@ var requestHandler = function(request, response) {
     });
     
     response.writeHead(statusCode, headers);
-    var tempstr = body.substring(1,body.length-1);
+    var tempstr = body.substring(1, body.length - 1);
     console.log('tempstr', tempstr);
     var inboundMessageObject = querystring.parse(body, ',', ':');
     results.push(inboundMessageObject);
