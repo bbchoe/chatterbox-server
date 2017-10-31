@@ -28,22 +28,9 @@ var defaultCorsHeaders = {
   'access-control-max-age': 10 // Seconds.
 };
 
-var url = require('url');
-var http = require('http');
-var querystring = require('querystring');
-
-var body = '';
-
 var results = [];
-
-var sampleMessage = {
-  username: 'brian',
-  text: 'here is a message from christina and brian',
-  roomname: 'lobby',
-  results: results
-};
-
-var messageStream = [];
+var datalog = {};
+datalog.results = results;
 
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
@@ -60,58 +47,51 @@ var requestHandler = function(request, response) {
   // Adding more logging to your server can be an easy way to get passive
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
-  console.log('Serving request type ' + request.method + ' for url ' + request.url);
-
+  
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
-
-  if (request.url === '/classes/messages') {
-    console.log('request received at /classes/messages');
+  headers['Content-Type'] = 'plain/text';
+  
+  if (request.url !== '/classes/messages') {
+    statusCode = 404;
+    response.writeHead(statusCode, headers);
+    response.end();
   }
  
   if (request.method === 'GET') {
     statusCode = 200;
     response.writeHead(statusCode, headers);
-    console.log('results: ', results);
-    response.end(JSON.stringify(sampleMessage));
+    response.end(JSON.stringify(datalog));
   }
   
   if (request.method === 'OPTIONS') {
     statusCode = 300;
-    response.end(JSON.stringify(sampleMessage));
+    response.end();
   }
 
   // Handle POST requests
   if (request.method === 'POST') {
     statusCode = 201;
-    
+    response.writeHead(statusCode, headers);
+    var body = '';
     request.on('data', (chunk) => {
       body += chunk;
     });
-    
-    response.writeHead(statusCode, headers);
-    var tempstr = body.substring(1, body.length - 1);
-    console.log('tempstr', tempstr);
-    var inboundMessageObject = querystring.parse(body, ',', ':');
-    results.push(inboundMessageObject);
-    console.log(' results ', results);
-    // console.log(' ----- Body ----- ');
-    // console.log(body);
-    response.end(results);
+    request.on('end', () => {
+      var obj = JSON.parse(body);
+      results.push(obj);
+      response.end(JSON.stringify(datalog));
+    });
   }   
 
   // Tell the client we are sending them plain text.
 
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = 'application/json';
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
-  response.writeHead(statusCode, headers);
-
-  // console.log('-------------------------------HERE IS THE REQUEST ----------------------------');
-  // console.log(request);
+  
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
   // response.end() will be the body of the response - i.e. what shows
